@@ -43,9 +43,10 @@ private:
     int SimpleDPPErrorCnt;
     int SimpleDPPRevState;
 
-    int send_stage; //0:start, 1:sending,only used in send_datas()
+
     constexpr static int SEND_START = 0;
     constexpr static int SENDING = 1;
+    int send_stage=SEND_START; //0:start, 1:sending,only used in send_datas()
 private:
     void SimpleDPPRecvInnerCallback(){
         emit RecvCallback(revBuffer);
@@ -75,7 +76,11 @@ public:
         }
     }
     int getSimpleDPPErrorCnt(){return SimpleDPPErrorCnt;}
-
+    void parse(const QByteArray & data){
+        for(char c:data){
+            parse(c);
+        }
+    }
     void parse(byte c){
         switch (SimpleDPPRevState)
         {
@@ -219,12 +224,13 @@ public:
         return send_datas(rest...); // 将会根据语法来递归调用
     }
 
-private:
+public:
     int send_datas(void)
     {
         send_datas_end();
         send_stage = SEND_START;
         return sendBuffer.size();
+
     }
 };
 

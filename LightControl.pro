@@ -13,6 +13,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    finddevicethread.hpp \
     mainwindow.h \
     simpledpp.hpp
 
