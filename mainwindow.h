@@ -32,49 +32,8 @@ private:
     bool rev_msg = false;
     bool device_fond = false;
 
-    void configSerial(QSerialPort * &pserial,const QString & comname){
-        pserial = new QSerialPort(comname);
-        pserial->setBaudRate(QSerialPort::Baud115200);
-        pserial->setParity(QSerialPort::NoParity);
-        pserial->setDataBits(QSerialPort::Data8);
-        pserial->setStopBits(QSerialPort::OneStop);
-        pserial->setFlowControl(QSerialPort::NoFlowControl);
-        connect(mySerialPort, SIGNAL(readyRead()), this, SLOT(readMyCom()));
-    }
-    void findDevice(){
-
-        QThread* find_simpledctroler = QThread::create([&]{
-            foreach(const QString & comname,portSet){
-
-                configSerial(mySerialPort,comname);
-                if (mySerialPort->open(QIODevice::ReadWrite)) {
-                    const char cmd[1] = {0x05};
-
-                    while(rev_msg == false){
-                        QThread::sleep(1);
-                        sdp->send_datas(cmd,1);
-                        mySerialPort->waitForBytesWritten();
-                        qDebug()<<"waitinge..."<<endl;
-                    }
-                    rev_msg = false;
-                    if(device_fond){
-                        qDebug()<<"Found device :"<<comname<<endl;
-                        return ;
-                    }
-
-                    mySerialPort->close();
-                    delete mySerialPort;
-                    mySerialPort = nullptr;
-                }else{
-                    qDebug()<<"can't open:"<<comname<<endl;
-                }
-            }
-        });
-        connect(find_simpledctroler,SIGNAL(finished()),this,SLOT(fondSimpledControler()));
-        //防止内存泄漏 avoid memory leaks
-        connect(find_simpledctroler,&QThread::finished ,find_simpledctroler,&QObject::deleteLater);
-        find_simpledctroler->start();
-    }
+    void configSerial(QSerialPort * &pserial,const QString & comname);
+    void findDevice();
 
 public slots:
     void checkAvailablePorts(){
@@ -100,45 +59,26 @@ public slots:
 
 public slots:
 
-    void fondSimpledControler(){
-        qDebug()<<"fondSimpledControler:"<<mySerialPort->portName()<<endl;
-    }
+    void fondSimpledControler();
 
-    void readMyCom()
-    {
-        QByteArray temp = mySerialPort->readAll();
-        sdp->parse(temp);
-    }
+    void readMyCom();
 
-    void SimpleDPPRecvCallback(const QByteArray& revdata){
-        uint8_t cmd = revdata[0];
-        rev_msg = true;
-        switch (cmd)
-        {
-        case 0x00:
-
-            break;
-        case 0x01:
-            /*set pwm duty*/
-
-            break;
-        case 0x04:
-
-            break;
-        case 0x05: //用于设备识别-->
-
-            break;
-        case 0x06:
-            device_fond = true;
-            break;
-        default:
-            break;
-        }
-
-
-    }
+    void SimpleDPPRecvCallback(const QByteArray& revdata);
     void SimpleDPPRevErrorCallback(SimpleDPPERROR error_code){
         qDebug()<<"error"<<error_code<<endl;
     }
+
+private slots:
+    void on_verticalSlider_valueChanged(int value);
+
+    void on_btn_get_sysinfo_clicked();
+
+
+
+    void on_btn_switch_mode_clicked(bool checked);
+
+private:
+    void disable_all_control_widget();
+    void enable_all_control_widget();
 };
 #endif // MAINWINDOW_H
